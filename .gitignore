@@ -1,0 +1,11 @@
+# IDE and OS ignores
+.idea
+.DS_Store
+__pycache__
+
+# virtualenv ignores
+/env
+
+
+# installation ignores
+.coverage
