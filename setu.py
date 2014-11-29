@@ -18,8 +18,8 @@ setup(
     # license
     license = 'MIT',
 
-    # package modules
-    py_modules = ['shiftmemory'],
+    # packages
+    packages = ['shiftmemory'],
 
 
 
