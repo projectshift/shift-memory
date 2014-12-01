@@ -1,6 +1,16 @@
-from distutils.core import setup
+import os
+from setuptools import setup
 
-setup(
+version = '0.0.2'
+
+# monkey patch os for vagrant hardlinks
+del os.link
+
+# drop caches
+os.system("find . -type f -name '*.pyc' -delete")
+
+# prepare config
+config = dict(
 
     # author
     author = 'Dmitry Belyakov',
@@ -8,12 +18,11 @@ setup(
 
     # project meta
     name = 'shiftmemory',
-    version='0.0.2',
+    version=version,
     url = 'https://github.com/projectshift/shift-memory',
-    download_url='https://github.com/projectshift/shift-memory/tarball/0.0.2',
+    download_url='https://github.com/projectshift/shift-memory/tarball/'+version,
     description='Python3 cache library',
     keywords=['python3', 'cache', 'redis', 'memcached'],
-    classfiers=[],
 
     # license
     license = 'MIT',
@@ -21,7 +30,10 @@ setup(
     # packages
     packages = ['shiftmemory'],
 
-
-
+    # dependencies
+    install_requires = ['redis']
 
 )
+
+# finally run the setup
+setup(**config)
