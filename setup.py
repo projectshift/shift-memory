@@ -13,7 +13,7 @@ setup(
     download_url='https://github.com/projectshift/shift-memory/tarball/0.0.2',
     description='Python3 cache library',
     keywords=['python3', 'cache', 'redis', 'memcached'],
-    classfiers=['python3', 'cache', 'redis', 'memcached'],
+    classfiers=[],
 
     # license
     license = 'MIT',
