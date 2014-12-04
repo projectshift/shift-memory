@@ -22,8 +22,8 @@ class Redis:
         self,
         namespace,
         ttl=60,
-        config=None,
-        namespace_separator=None
+        namespace_separator=None,
+        **config
     ):
         """
         Create adapter
@@ -43,7 +43,7 @@ class Redis:
         if namespace_separator:
             self.namespace_separator = namespace_separator
 
-        # redis key prefixes for items and tags
+        # key prefixes for items and tags
         self.item_prefix = self.namespace + self.namespace_separator
         self.tag_prefix = self.item_prefix + 'tags' + self.namespace_separator
 
@@ -100,6 +100,9 @@ class Redis:
         :param key:             string key
         :return:                string normalized key
         """
+        if self.is_full_item_key(key):
+            return key
+
         key = self.item_prefix + key
         return key
 
@@ -135,6 +138,13 @@ class Redis:
 
 
     def check_ttl_support(self):
+        """
+        Check ttl support
+        Checks major redis version to be >2 for ttl support and raises
+        feature exception if it's not
+
+        :return:                None
+        """
         redis = self.get_redis()
         version = redis.info('server')['redis_version']
         major = int(version.split('.')[0])
@@ -143,6 +153,79 @@ class Redis:
             raise exceptions.AdapterFeatureMissingException(error)
 
         return True
+
+
+    def ttl_from_expiration(self, expires_at):
+        """
+        TTL from expiration
+        Returns ttl in seconds until expiration date based on now
+
+        :param expires_at:          date
+        :return:                    int
+        """
+        return 10
+
+
+
+    def set(self, key, value, tags=None, ttl=None, expires_at=None):
+        """
+        Set item
+        Creates or updates and item (hash). Can optionally accept an iterable
+        of tags to add to item and either ttl or expiration date for custom
+        item expiration, otherwise falls back to default adapter ttl.
+
+        :param key:             string, cache key
+        :param value:           string, data to put
+        :param tags:            iterable or None, any tags to add
+        :param ttl:             int, optional custom ttl in seconds
+        :param expires_at:      date, optional expiration date
+        :return:                bool
+        """
+
+        redis = self.get_redis()
+        multi = redis.pipeline()
+
+        # data
+        key = self.get_full_item_key(key)
+        multi.hset(key, 'data', value)
+
+        # expire
+        if expires_at: ttl = self.ttl_from_expiration(expires_at)
+        if not ttl: ttl = self.ttl
+        multi.expire(key, ttl)
+
+        # tag
+        if tags: tags = list(tags)
+
+
+        # commit
+        multi.execute()
+        return
+
+
+
+    def add(self, key, value, tags=None, ttl=None, expires_at=None):
+        pass
+
+
+
+    def exists(self, key):
+        pass
+
+    def get(self, key=None, tags=None):
+        pass
+
+    def increment(self, key):
+        pass
+
+    def decrement(self, key):
+        pass
+
+    def delete(self, key=None, tags=None):
+        pass
+
+    def delete_all(self):
+        pass
 
 
 
