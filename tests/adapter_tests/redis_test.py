@@ -111,4 +111,17 @@ class RedisTest(TestCase):
         self.assertEqual(expected, tag_key)
 
 
+    # -------------------------------------------------------------------------
+    # Cache
+    # -------------------------------------------------------------------------
 
+
+    def test_check_ttl_support(self):
+        """ Can check for redis TTL support"""
+        redis = Redis('test')
+        self.assertTrue(redis.check_ttl_support())
+
+        redis.redis = mock.Mock()
+        redis.redis.info.return_value = dict(redis_version='1.1.1')
+        with self.assertRaises(exceptions.AdapterFeatureMissingException):
+            redis.check_ttl_support()

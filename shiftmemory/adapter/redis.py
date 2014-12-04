@@ -1,4 +1,5 @@
 from redis import StrictRedis
+from shiftmemory import exceptions
 
 class Redis:
     """
@@ -131,6 +132,17 @@ class Redis:
     # -------------------------------------------------------------------------
     # Caching
     # -------------------------------------------------------------------------
+
+
+    def check_ttl_support(self):
+        redis = self.get_redis()
+        version = redis.info('server')['redis_version']
+        major = int(version.split('.')[0])
+        if major < 2:
+            error = 'To use TTL you need Redis >= 2.0.0'
+            raise exceptions.AdapterFeatureMissingException(error)
+
+        return True
 
 
 
