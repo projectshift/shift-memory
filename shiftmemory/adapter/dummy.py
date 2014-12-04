@@ -4,9 +4,10 @@ class Dummy:
     It exists mostly for testing interfaces and does nothing, but returns
     success for every operation
     """
-    def __init__(self, config, ttl):
+    def __init__(self, ttl, namespace, config):
         self.config = config
         self.ttl = ttl
+        self.namespace = namespace
 
 
 

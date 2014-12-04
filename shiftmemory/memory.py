@@ -42,25 +42,70 @@ class Memory():
             raise exceptions.AdapterMissingException(error)
 
         cls = getattr(adapter, class_name)
-        cache = cls(config=cache_config['config'], ttl=cache_config['ttl'])
+        cache = cls(
+            namespace = name,
+            config=cache_config['config'],
+            ttl=cache_config['ttl'],
+            )
         self.caches[name] = cache
         return self.caches[name]
 
 
-    def optimize_cache(self, name):
-        pass
-
-
-    def optimize_all(self):
-        pass
-
-
     def drop_cache(self, name):
-        pass
+        """
+        Drop cache
+        Deletes all items in cache by name
+        """
+        cache = self.get_cache(name)
+        if not hasattr(cache, 'delete_all'):
+            cls = type(cache)
+            error = 'Adapter [{}] can not drop cache by namespace'.format(cls)
+            raise exceptions.AdapterFeatureMissingException(error)
+
+        return cache.delete_all()
 
 
-    def drop_all(self):
-        pass
+    def drop_all_caches(self):
+        """
+        Drop all caches
+        Goes through every configured cache and drops all items. Will
+        skip certain caches if they do not support drop all feature
+        """
+        for name in self.config.keys():
+            cache = self.get_cache(name)
+            if hasattr(cache, 'delete_all'):
+                cache.delete_all(name)
+        return True
+
+
+    def optimize_cache(self, name):
+        """
+        Optimize cache
+        gets cache by name and performs optimization if supported
+        """
+        cache = self.get_cache(name)
+        if not hasattr(cache, 'optimize'):
+            cls = type(cache)
+            error = 'Adapter [{}] can not optimize itself'.format(cls)
+            raise exceptions.AdapterFeatureMissingException(error)
+
+        return cache.optimize()
+
+
+    def optimize_all_caches(self):
+        """
+        Optimize all caches
+        Goes through every configured cache and optimizes. Will
+        skip certain caches if they do not support optimization feature
+        """
+        for name in self.config.keys():
+            cache = self.get_cache(name)
+            if hasattr(cache, 'optimize'):
+                cache.optimize(name)
+        return True
+
+
+
 
 
 

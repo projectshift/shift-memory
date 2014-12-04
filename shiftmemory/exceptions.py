@@ -20,3 +20,11 @@ class AdapterMissingException(ShiftMemoryException):
     Raised when you try to create a cache win nonexistent adapter
     """
     pass
+
+class AdapterFeatureMissingException(ShiftMemoryException):
+    """
+    Adapter feature missing exception
+    Raised when you you ask adapter to do something it can't. Like
+    drop all caches or optimize
+    """
+    pass
