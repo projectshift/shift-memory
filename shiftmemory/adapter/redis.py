@@ -6,7 +6,13 @@ class Redis:
     Implements caching to redis backend
     """
 
-    def __init__(self, namespace, ttl=60,  config=None):
+    def __init__(
+        self,
+        namespace,
+        ttl=60,
+        config=None,
+        namespace_separator=None
+    ):
         """
         Create adapter
         Instantiates adapter with namespace, default ttl and optional
@@ -17,10 +23,15 @@ class Redis:
         :param config:          connection configuration (optional)
         :return:                None
         """
-        self.namespace = namespace
-        self.ttl = ttl
-        self.configure(config)
         self.redis = None
+        self.ttl = ttl
+        self.namespace = namespace
+
+        self.namespace_separator = '::'
+        if namespace_separator:
+            self.namespace_separator = namespace_separator
+
+        self.configure(config)
 
 
 

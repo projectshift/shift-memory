@@ -2,7 +2,6 @@ from unittest import TestCase, mock
 from nose.plugins.attrib import attr
 from shiftmemory import Memory, exceptions, adapter
 
-@attr('memory')
 class MemoryTest(TestCase):
     """ This holds tests for the main memory api """
 

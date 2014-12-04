@@ -9,18 +9,10 @@ from shiftmemory.adapter import Redis
 class RedisTest(TestCase):
     """ This holds tests for the main memory api """
 
-    def setUp(self):
-        TestCase.setUp(self)
-
-        self.config = dict()
-
-        # adapter
-        self.config['testing'] = dict(
-            adapter='redis',
-            ttl=1,
-            config=dict()
-        )
-
+    def tearDown(self):
+        redis = Redis('test')
+        redis.get_redis().flushdb()
+        TestCase.tearDown(self)
 
 
     # -------------------------------------------------------------------------
@@ -63,6 +55,17 @@ class RedisTest(TestCase):
         adapter = Redis('testing')
         redis = adapter.get_redis()
         self.assertIsInstance(redis, StrictRedis)
+
+    def test_can_put_to_redis(self):
+        """ Can do basic put to storage """
+        redis = Redis('testing')
+        redis.get_redis().set('foo', 'bar')
+        result = redis.get_redis().get('foo')
+        if result:
+            result = result.decode()
+            
+        self.assertEqual('bar', result)
+        print(result)
 
 
 
