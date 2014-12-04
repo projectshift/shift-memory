@@ -5,9 +5,9 @@ class Dummy:
     success for every operation
     """
     def __init__(self, ttl, namespace, config):
-        self.config = config
         self.ttl = ttl
         self.namespace = namespace
+        self.config = config
 
 
 

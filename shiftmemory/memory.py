@@ -19,6 +19,7 @@ class Memory():
             self.config = config
 
 
+
     def get_cache(self, name):
         """
         Get cache
@@ -51,6 +52,7 @@ class Memory():
         return self.caches[name]
 
 
+
     def drop_cache(self, name):
         """
         Drop cache
@@ -63,6 +65,7 @@ class Memory():
             raise exceptions.AdapterFeatureMissingException(error)
 
         return cache.delete_all()
+
 
 
     def drop_all_caches(self):
@@ -78,6 +81,7 @@ class Memory():
         return True
 
 
+
     def optimize_cache(self, name):
         """
         Optimize cache
@@ -90,6 +94,7 @@ class Memory():
             raise exceptions.AdapterFeatureMissingException(error)
 
         return cache.optimize()
+
 
 
     def optimize_all_caches(self):
