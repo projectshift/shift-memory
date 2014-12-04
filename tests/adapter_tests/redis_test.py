@@ -56,6 +56,7 @@ class RedisTest(TestCase):
         redis = adapter.get_redis()
         self.assertIsInstance(redis, StrictRedis)
 
+
     def test_can_put_to_redis(self):
         """ Can do basic put to storage """
         redis = Redis('testing')
@@ -63,11 +64,51 @@ class RedisTest(TestCase):
         result = redis.get_redis().get('foo')
         if result:
             result = result.decode()
-            
+
         self.assertEqual('bar', result)
-        print(result)
 
 
+    # -------------------------------------------------------------------------
+    # Keys
+    # -------------------------------------------------------------------------
+
+    def test_get_full_key(self):
+        """ Generating full namespaced key from short cache key"""
+
+        namespace = 'testing'
+        separator = '::'
+        key = 'some-key'
+
+        redis = Redis(namespace)
+        full_key = redis.get_full_item_key(key)
+        self.assertEqual(namespace + separator + key, full_key)
+
+    def test_can_detect_full_keys(self):
+        """ Detecting full item key """
+
+        namespace = 'testing'
+        key = 'some-key'
+        redis = Redis(namespace)
+
+        full_key = redis.get_full_item_key(key)
+        not_full_key = 'x' + full_key
+        bogus = 'bad'
+
+        self.assertTrue(redis.is_full_item_key(full_key))
+        self.assertFalse(redis.is_full_item_key(not_full_key))
+        self.assertFalse(redis.is_full_item_key(bogus))
+
+
+    def test_get_tag_key(self):
+        """ Get full key for a tag set from tag name"""
+        namespace = 'testing'
+        tag = 'tagged'
+        sep = '::'
+
+        redis = Redis(namespace)
+        tag_key = redis.get_tag_set_key(tag)
+        expected = namespace + sep + 'tags' + sep + tag
+        self.assertEqual(expected, tag_key)
 
 
 

@@ -3,7 +3,18 @@ from redis import StrictRedis
 class Redis:
     """
     Redis adapter
-    Implements caching to redis backend
+    Implements cache for items under namespaces in a single database. In
+    addition each item can be marked by tags and can have optional custom
+    expiration. You can then perform fetch or remove items by tags or
+    namespaces.
+
+    The way it works is that each cached item is stored as redis hash
+    consisting of data and tags. Each tag is stored as redis set consisting
+    of hash ids for tagged items.
+
+    It is important to notice that expired items won't be removed from
+    tags automatically, that is why you can optimize your cache with optimize
+    command and there is a simple garbage collection in place.
     """
 
     def __init__(
@@ -31,8 +42,12 @@ class Redis:
         if namespace_separator:
             self.namespace_separator = namespace_separator
 
-        self.configure(config)
+        # redis key prefixes for items and tags
+        self.item_prefix = self.namespace + self.namespace_separator
+        self.tag_prefix = self.item_prefix + 'tags' + self.namespace_separator
 
+        # init redis connection
+        self.configure(config)
 
 
     def configure(self, config=None):
@@ -65,6 +80,61 @@ class Redis:
 
         :return:                redis.client.StrictRedis
         """
-        if not self.redis: self.redis = StrictRedis(**self.config)
+        if not self.redis:
+            self.redis = StrictRedis(**self.config)
+
         return self.redis
 
+
+    # -------------------------------------------------------------------------
+    # Keys
+    # -------------------------------------------------------------------------
+
+    def get_full_item_key(self, key):
+        """
+        Get full item keys
+        Returns normalized item cache key with a namespace prepended.
+        This will be used to store a hash of data and tags
+
+        :param key:             string key
+        :return:                string normalized key
+        """
+        key = self.item_prefix + key
+        return key
+
+
+
+    def is_full_item_key(self, key):
+        """
+        Is full item key?
+        Checks if provided key is a full item cache key used for storage. It
+        should contain prepended namespace.
+
+        :param key:             string, key to check
+        :return:                bool
+        """
+        return key.startswith(self.item_prefix)
+
+
+
+    def get_tag_set_key(self, tag):
+        """
+        Get tag set key
+        Returns tag set key used to store tagged items hash ids
+
+        :param key:             string, tag
+        :return:                string, tag set key
+        """
+        return self.tag_prefix + tag
+
+
+    # -------------------------------------------------------------------------
+    # Caching
+    # -------------------------------------------------------------------------
+
+
+
+
+    # -------------------------------------------------------------------------
+    # Optimizing
+    # -------------------------------------------------------------------------
