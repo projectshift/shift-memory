@@ -2,33 +2,37 @@ from unittest import TestCase, mock
 from nose.plugins.attrib import attr
 from shiftmemory import Memory, exceptions, adapter
 
+@attr('memory')
 class MemoryTest(TestCase):
     """ This holds tests for the main memory api """
 
     def setUp(self):
         TestCase.setUp(self)
 
-        self.config = dict()
+        self.config = dict(
+            adapters=dict(),
+            caches=dict())
 
-        # adapter
-        self.config['dummy-one'] = dict(
+        # adapters
+        self.config['adapters']['dummy'] = dict(
+            type='dummy',
+            config='some adapter config'
+        )
+        self.config['adapters']['bad'] = dict(
+            type='bad',
+            config='some adapter config'
+        )
+
+        # caches
+        self.config['caches']['dummy-one'] = dict(
             adapter='dummy',
-            ttl=1,
-            config='some adapter config'
+            ttl=10
         )
-        self.config['not-implemented'] = dict(
-            adapter='bad',
-            ttl=1,
-            config='some adapter config'
-        )
+
 
 
 
     # -------------------------------------------------------------------------
-
-    def test_testing(self):
-        """ Can do testing """
-        self.assertTrue(True)
 
     def test_creation(self):
         """ Can create an instance of memory """
@@ -42,9 +46,8 @@ class MemoryTest(TestCase):
         self.assertEqual(self.config, memory.config)
 
 
-    def test_return_created_if_exists(self):
+    def test_return_created_cache_if_exists(self):
         """ Return previously created cache if it exists """
-
         name = 'somecache'
         cache = 'some cache adapter object'
         memory = Memory()
@@ -52,18 +55,32 @@ class MemoryTest(TestCase):
         self.assertEqual(cache, memory.get_cache(name))
 
 
-    def test_raise_on_creating_nonexistent_adapter(self):
+    def test_raise_when_getting_not_configured_cache(self):
+        """ Raise when getting cache that wasn't configured """
+        with self.assertRaises(exceptions.ConfigurationException):
+            memory = Memory(self.config)
+            memory.get_cache('not-configured')
+
+
+    def test_raise_on_creating_cache_with_nonexistent_adapter(self):
         """ Raise on creating adapter that was not configured """
         with self.assertRaises(exceptions.ConfigurationException):
-            memory = Memory()
-            memory.get_cache('not-configured')
+            config = dict(adapters=dict(), caches=dict(
+                badadapter = dict(adapter='not-configured')
+            ))
+            memory = Memory(config)
+            memory.get_cache('badadapter')
 
 
     def test_raise_on_not_implemented_adapter(self):
         """ Raise on creating adapter that is not implemented """
         with self.assertRaises(exceptions.AdapterMissingException):
-            memory = Memory(self.config)
-            memory.get_cache('not-implemented')
+            config = dict(
+                adapters=dict(bad=dict(type='noclass')),
+                caches=dict(badadapter=dict(adapter='bad')
+            ))
+            memory = Memory(config)
+            memory.get_cache('badadapter')
 
 
     def test_create_cache(self):

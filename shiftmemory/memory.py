@@ -10,46 +10,54 @@ class Memory():
 
     def __init__(self, config=None):
         """
-        Creates your memory instance.
+        Creates your memory instance
         Just give it your caches configuration as a dictionary
         """
         self.caches = dict()
-        self.config = dict()
+        self.config = dict(adapters=dict(), caches=dict())
         if config:
-            self.config = config
+            self.config=config
 
 
 
-    def get_cache(self, name):
+    def get_cache(self, cache_name):
         """
         Get cache
         Checks if a cache was already created and returns that. Otherwise
         attempts to create a cache from configuration and preserve
         for future use
         """
-        if name in self.caches:
-            return self.caches[name]
+        if cache_name in self.caches:
+            return self.caches[cache_name]
 
-        if not name in self.config:
-            error = 'Adapter [{}] is not configured'.format(name)
+        if not cache_name in self.config['caches']:
+            error = 'Cache [{}] is not configured'.format(cache_name)
             raise exceptions.ConfigurationException(error)
 
-        cache_config = self.config[name]
+        cache_config = self.config['caches'][cache_name]
         adapter_name = cache_config['adapter']
 
-        class_name = adapter_name[0].upper() + adapter_name[1:]
-        if not hasattr(adapter, class_name):
-            error = 'Adapter class [{}] is missing'.format(class_name)
+        if not adapter_name in self.config['adapters']:
+            error = 'Adapter [{}] is not configured'.format(adapter_name)
+            raise exceptions.ConfigurationException(error)
+
+        adapter_config = self.config['adapters'][adapter_name]
+        adapter_type = adapter_config['type']
+        adapter_class = adapter_type[0].upper() + adapter_type[1:]
+
+        if not hasattr(adapter, adapter_class):
+            error = 'Adapter class [{}] is missing'.format(adapter_class)
             raise exceptions.AdapterMissingException(error)
 
-        cls = getattr(adapter, class_name)
+
+        cls = getattr(adapter, adapter_class)
         cache = cls(
-            namespace = name,
-            config=cache_config['config'],
+            namespace = cache_name,
+            config=adapter_config['config'],
             ttl=cache_config['ttl'],
             )
-        self.caches[name] = cache
-        return self.caches[name]
+        self.caches[cache_name] = cache
+        return self.caches[cache_name]
 
 
 
