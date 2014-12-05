@@ -138,6 +138,8 @@ class RedisTest(TestCase):
             redis.check_ttl_support()
 
 
+
+
     def test_can_set(self):
         """ Simple item set """
         key = 'somekey'

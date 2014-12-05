@@ -155,15 +155,16 @@ class Redis:
         return True
 
 
-    def ttl_from_expiration(self, expires_at):
+    def ttl_from_expiration(self, expires):
         """
         TTL from expiration
-        Returns ttl in seconds until expiration date based on now
+        Returns ttl in seconds until expiration date based on now.
 
-        :param expires_at:          date
+        :param expires:             date/timestamp/string/shift (+ 1 hour)
         :return:                    int
         """
-        return 10
+        from shiftmemory.time import ttl_from_expiration
+        return ttl_from_expiration()
 
 
 
@@ -173,12 +174,14 @@ class Redis:
         Creates or updates and item (hash). Can optionally accept an iterable
         of tags to add to item and either ttl or expiration date for custom
         item expiration, otherwise falls back to default adapter ttl.
+        Expiration date accepts various formats, see ttl_from_expiration()
+        for more info.
 
         :param key:             string, cache key
         :param value:           string, data to put
         :param tags:            iterable or None, any tags to add
         :param ttl:             int, optional custom ttl in seconds
-        :param expires_at:      date, optional expiration date
+        :param expires_at:      optional expiration date (utc)
         :return:                bool
         """
 

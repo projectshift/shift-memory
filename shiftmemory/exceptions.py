@@ -28,3 +28,10 @@ class AdapterFeatureMissingException(ShiftMemoryException):
     drop all caches or optimize
     """
     pass
+
+class ValueException(ShiftMemoryException, ValueError):
+    """
+    Value exception
+    Raised whenever we encounter an incorrect value
+    """
+    pass
