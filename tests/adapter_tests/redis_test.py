@@ -142,13 +142,14 @@ class RedisTest(TestCase):
         """ Simple item set """
         key = 'somekey'
         data = 'some date to put to cache'
-        ttl = 60
 
         redis = Redis('test')
-        redis.set(key,data,ttl=ttl)
+        redis.set(key,data)
 
         full_key = redis.get_full_item_key(key)
         self.assertIsNotNone(redis.get_redis().hget(full_key, 'data'))
+
+
 
 
 
@@ -162,3 +163,53 @@ class RedisTest(TestCase):
 
         self.assertTrue(redis.exists(key))
         self.assertFalse(redis.exists('no-item'))
+
+
+    def test_set_item_tags(self):
+        """ Setting item tags """
+
+        key1 = 'somekey'
+        data1 = 'some date to put to cache'
+        key2 = 'other'
+        data2 = 'some other data'
+
+
+        redis = Redis('test')
+        redis.set(key1, data1)
+        redis.set(key2, data2)
+
+        tags = ['tag1', 'tag2']
+        redis.set_tags(key1, tags)
+        redis.set_tags(key2, tags)
+
+        set1 = redis.get_tagged_items('tag1')
+        set2 = redis.get_tagged_items('tag2')
+
+        # assert tags created and contain item
+        self.assertTrue(type(set1) is set)
+        self.assertTrue(redis.get_full_item_key(key1) in set1)
+        self.assertTrue(redis.get_full_item_key(key2) in set1)
+
+        self.assertTrue(type(set2) is set)
+        self.assertTrue(redis.get_full_item_key(key1) in set2)
+        self.assertTrue(redis.get_full_item_key(key2) in set2)
+
+
+    def test_get_item_tags(self):
+        """ Getting item tags """
+        key = 'somekey'
+        data = 'some date to put to cache'
+
+        redis = Redis('test')
+        redis.set(key, data)
+
+        tags = ['tag1', 'tag2']
+        redis.set_tags(key, tags)
+
+        # assert item tagged
+        item_tags = redis.get_item_tags(key)
+        self.assertTrue(type(item_tags) is list)
+        self.assertIn('tag1', item_tags)
+        self.assertIn('tag2', item_tags)
+
+        self.assertIsNone(redis.get_item_tags('no-item'))

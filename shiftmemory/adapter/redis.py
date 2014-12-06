@@ -63,7 +63,8 @@ class Redis:
         default_config = dict(
             host='localhost',
             port=6379,
-            db=0
+            db=0,
+            decode_responses=True
         )
 
         if config is None: config = dict()
@@ -205,7 +206,7 @@ class Redis:
 
         # commit
         multi.execute()
-        return
+        return True
 
 
 
@@ -224,11 +225,78 @@ class Redis:
     def decrement(self, key):
         pass
 
-    def delete(self, key=None, tags=None):
+    def delete(self, key=None, tags=None, disjunction=False):
         pass
 
     def delete_all(self):
         pass
+
+
+    def set_tags(self, item_key, tags):
+        """
+        Set tags
+        Sets an iterable of tags to an item and creates or updates tag set
+        for each tag with item key.
+
+        :param item_key:        string, item cache key
+        :param tags:            Iterable, tags to set
+        :return:                bool
+        """
+        key = self.get_full_item_key(item_key)
+        if not self.exists(key):
+            return False
+
+        # remove tags?
+        if not tags:
+            #self.remove_tags(item_key)
+            raise NotImplementedError
+
+        redis = self.get_redis()
+
+        # set tags to item
+        tag_string = ','.join(tags)
+        result = redis.hset(key, 'tags', tag_string)
+        if not result:
+            return False
+
+
+        # add item key to tags
+        for tag in tags:
+            tag_key = self.get_tag_set_key(tag)
+            result = redis.sadd(tag_key, key)
+            if not result:
+                return False
+
+        return True
+
+
+    def get_tagged_items(self, tag):
+        """
+        Get tagged items
+        Returns a ist of item keys marked with the given tag.
+
+        :param tag:             string, tag
+        :return:                list
+        """
+        key = self.get_tag_set_key(tag)
+        result = self.get_redis().smembers(key)
+        return result
+
+
+    def get_item_tags(self, key):
+        """
+        Get item tags
+        Returns a list of items tags by item key
+
+        :param key:             string, item key
+        :return:                list | None
+        """
+        key = self.get_full_item_key(key)
+        tag_string = self.get_redis().hget(key, 'tags')
+        if not tag_string:
+            return
+
+        return tag_string.split(',')
 
 
 
