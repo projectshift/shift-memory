@@ -190,7 +190,7 @@ class RedisTest(TestCase):
         redis.set(key,data, expires_at=expire)
         full_key = redis.get_full_item_key(key)
 
-        time.sleep(1)
+        time.sleep(2)
         self.assertIsNone(redis.get_redis().hget(full_key, 'data'))
 
 
