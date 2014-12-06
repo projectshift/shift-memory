@@ -60,9 +60,6 @@ class RedisTest(TestCase):
         redis = Redis('testing')
         redis.get_redis().set('foo', 'bar')
         result = redis.get_redis().get('foo')
-        if result:
-            result = result.decode()
-
         self.assertEqual('bar', result)
 
 
