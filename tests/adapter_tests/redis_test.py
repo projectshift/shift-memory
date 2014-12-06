@@ -138,17 +138,27 @@ class RedisTest(TestCase):
             redis.check_ttl_support()
 
 
-
-
     def test_can_set(self):
         """ Simple item set """
         key = 'somekey'
         data = 'some date to put to cache'
         ttl = 60
 
-        redis = Redis('test', db=1)
+        redis = Redis('test')
         redis.set(key,data,ttl=ttl)
 
         full_key = redis.get_full_item_key(key)
         self.assertIsNotNone(redis.get_redis().hget(full_key, 'data'))
 
+
+
+    def test_check_item_existence(self):
+        """ Can check item existence in cache """
+        key = 'somekey'
+        data = 'some date to put to cache'
+
+        redis = Redis('test')
+        redis.set(key,data)
+
+        self.assertTrue(redis.exists(key))
+        self.assertFalse(redis.exists('no-item'))

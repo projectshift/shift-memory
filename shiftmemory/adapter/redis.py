@@ -1,5 +1,5 @@
 from redis import StrictRedis
-from shiftmemory import exceptions
+from shiftmemory import exceptions, times
 
 class Redis:
     """
@@ -155,16 +155,18 @@ class Redis:
         return True
 
 
-    def ttl_from_expiration(self, expires):
-        """
-        TTL from expiration
-        Returns ttl in seconds until expiration date based on now.
 
-        :param expires:             date/timestamp/string/shift (+ 1 hour)
-        :return:                    int
+    def exists(self, key):
         """
-        from shiftmemory.time import ttl_from_expiration
-        return ttl_from_expiration()
+        Item exists?
+        Checks item existence by the given key to return a boolean result
+
+        :param key:             string, item key
+        :return:                bool
+        """
+        key = self.get_full_item_key(key)
+        result = self.get_redis().exists(key)
+        return result
 
 
 
@@ -193,7 +195,7 @@ class Redis:
         multi.hset(key, 'data', value)
 
         # expire
-        if expires_at: ttl = self.ttl_from_expiration(expires_at)
+        if expires_at: ttl = times.ttl_from_expiration(expires_at)
         if not ttl: ttl = self.ttl
         multi.expire(key, ttl)
 
@@ -212,8 +214,6 @@ class Redis:
 
 
 
-    def exists(self, key):
-        pass
 
     def get(self, key=None, tags=None):
         pass
