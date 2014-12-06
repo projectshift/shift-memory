@@ -171,7 +171,7 @@ class Redis:
 
 
 
-    def set(self, key, value, tags=None, ttl=None, expires_at=None):
+    def set(self, key, value, *, tags=None, ttl=None, expires_at=None):
         """
         Set item
         Creates or updates and item (hash). Can optionally accept an iterable
@@ -189,34 +189,31 @@ class Redis:
         """
 
         redis = self.get_redis()
-        multi = redis.pipeline()
 
         # data
         key = self.get_full_item_key(key)
-        multi.hset(key, 'data', value)
+        redis.hset(key, 'data', value)
 
         # expire
         if expires_at: ttl = times.ttl_from_expiration(expires_at)
         if not ttl: ttl = self.ttl
-        multi.expire(key, ttl)
+        redis.expire(key, ttl)
 
         # tag
-        if tags: tags = list(tags)
+        if tags:
+            self.set_tags(key, list(tags))
 
-
-        # commit
-        multi.execute()
         return True
 
 
 
-    def add(self, key, value, tags=None, ttl=None, expires_at=None):
+    def add(self, key, value, *, tags=None, ttl=None, expires_at=None):
         pass
 
 
 
 
-    def get(self, key=None, tags=None):
+    def get(self, key=None, *, tags=None):
         pass
 
     def increment(self, key):
@@ -225,7 +222,7 @@ class Redis:
     def decrement(self, key):
         pass
 
-    def delete(self, key=None, tags=None, disjunction=False):
+    def delete(self, key=None, *, tags=None, disjunction=False):
         pass
 
     def delete_all(self):

@@ -63,6 +63,8 @@ class RedisTest(TestCase):
         self.assertEqual('bar', result)
 
 
+
+
     # -------------------------------------------------------------------------
     # Keys
     # -------------------------------------------------------------------------
@@ -134,6 +136,17 @@ class RedisTest(TestCase):
         with self.assertRaises(exceptions.AdapterFeatureMissingException):
             redis.check_ttl_support()
 
+    def test_check_item_existence(self):
+        """ Can check item existence in cache """
+        key = 'somekey'
+        data = 'some date to put to cache'
+
+        redis = Redis('test')
+        redis.set(key,data)
+
+        self.assertTrue(redis.exists(key))
+        self.assertFalse(redis.exists('no-item'))
+
 
     def test_can_set(self):
         """ Simple item set """
@@ -147,19 +160,56 @@ class RedisTest(TestCase):
         self.assertIsNotNone(redis.get_redis().hget(full_key, 'data'))
 
 
+    @attr('zz')
+    def test_can_set_with_ttl(self):
+        """ Doing set item with custom ttl"""
+        import time
 
-
-
-    def test_check_item_existence(self):
-        """ Can check item existence in cache """
+        ttl = 1
         key = 'somekey'
         data = 'some date to put to cache'
 
         redis = Redis('test')
-        redis.set(key,data)
+        redis.set(key,data, ttl=ttl)
+        full_key = redis.get_full_item_key(key)
 
-        self.assertTrue(redis.exists(key))
-        self.assertFalse(redis.exists('no-item'))
+        time.sleep(1)
+        self.assertIsNone(redis.get_redis().hget(full_key, 'data'))
+
+
+
+    def test_can_set_with_expiration(self):
+        """ Doing set item with expiration """
+        import time
+
+        key = 'somekey'
+        data = 'some date to put to cache'
+        expire = '+1second'
+
+        redis = Redis('test')
+        redis.set(key,data, expires_at=expire)
+        full_key = redis.get_full_item_key(key)
+
+        time.sleep(1)
+        self.assertIsNone(redis.get_redis().hget(full_key, 'data'))
+
+
+
+    def test_can_set_with_tags(self):
+        """ Doing set item with tags """
+        key = 'somekey'
+        data = 'some date to put to cache'
+        tags = ['tag']
+
+        redis = Redis('test')
+        redis.set(key,data, tags=tags)
+
+        item_tags = redis.get_item_tags(key)
+        tagged_items = redis.get_tagged_items('tag')
+
+        self.assertIn('tag', item_tags)
+        self.assertIn(redis.get_full_item_key(key), tagged_items)
+
 
 
     def test_set_item_tags(self):
