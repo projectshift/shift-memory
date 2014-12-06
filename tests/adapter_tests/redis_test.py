@@ -10,8 +10,8 @@ class RedisTest(TestCase):
     """ This holds tests for the main memory api """
 
     def tearDown(self):
-        # redis = Redis('test')
-        # redis.get_redis().flushdb()
+        redis = Redis('test')
+        redis.get_redis().flushdb()
         TestCase.tearDown(self)
 
 
@@ -190,7 +190,7 @@ class RedisTest(TestCase):
         redis.set(key,data, expires_at=expire)
         full_key = redis.get_full_item_key(key)
 
-        time.sleep(2)
+        time.sleep(1.1)
         self.assertIsNone(redis.get_redis().hget(full_key, 'data'))
 
 
