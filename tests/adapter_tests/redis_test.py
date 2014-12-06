@@ -160,7 +160,6 @@ class RedisTest(TestCase):
         self.assertIsNotNone(redis.get_redis().hget(full_key, 'data'))
 
 
-    @attr('zz')
     def test_can_set_with_ttl(self):
         """ Doing set item with custom ttl"""
         import time
@@ -209,6 +208,34 @@ class RedisTest(TestCase):
 
         self.assertIn('tag', item_tags)
         self.assertIn(redis.get_full_item_key(key), tagged_items)
+
+    def test_can_add_item(self):
+        """ Add item if not exist """
+
+        key = 'itemkey'
+        data1 = 'initial item data'
+        data2 = 'updated item data'
+
+        redis = Redis('test')
+        self.assertTrue(redis.add(key, data1))
+        self.assertFalse(redis.add(key, data2))
+        self.assertEqual(data1, redis.get(key))
+
+    def test_can_get_by_key(self):
+        """ Getting item by key """
+        key = 'itemkey'
+        data = 'initial item data'
+
+        redis = Redis('test')
+        self.assertTrue(redis.set(key, data))
+        self.assertEqual(data, redis.get(key))
+
+
+    def can_get_by_tags(self):
+        """ Getting items by tags """
+        pass
+
+
 
 
 

@@ -36,6 +36,7 @@ class Redis:
         :return:                None
         """
         self.redis = None
+
         self.ttl = ttl
         self.namespace = namespace
 
@@ -208,13 +209,40 @@ class Redis:
 
 
     def add(self, key, value, *, tags=None, ttl=None, expires_at=None):
-        pass
+        """
+        Add
+        Similar to set item but only saves an item if it does not exist yet.
+        Will return false in case in does.
+
+        :param key:             string, cache key
+        :param value:           string, data to put
+        :param tags:            iterable or None, any tags to add
+        :param ttl:             int, optional custom ttl in seconds
+        :param expires_at:      optional expiration date (utc)
+        :return:                bool
+        """
+        if self.exists(key):
+            return False
+        return self.set(key, value, tags=tags, ttl=ttl, expires_at=expires_at)
 
 
 
 
-    def get(self, key=None, *, tags=None):
-        pass
+    def get(self, key=None, *, tags=None, disjunction=False):
+        """
+        Get
+        Get single item by key or multiple items by tags. If several tags
+        provided and disjunction if false (default) all tags must match,
+        otherwise only single tag must match.
+
+        :param key:             int, item key
+        :param tags:            Iterable, tags to fetch by
+        :return:                string, Iterable or None
+        """
+        if key is not None:
+            key = self.get_full_item_key(key)
+            return self.get_redis().hget(key, 'data')
+
 
     def increment(self, key):
         pass
