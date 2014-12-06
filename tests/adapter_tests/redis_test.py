@@ -231,10 +231,49 @@ class RedisTest(TestCase):
         self.assertEqual(data, redis.get(key))
 
 
-    def can_get_by_tags(self):
+    def test_can_get_by_tags(self):
         """ Getting items by tags """
         pass
 
+
+    def test_can_delete_by_key(self):
+        """ Deleting item by key """
+        key = 'itemkey'
+        data = 'initial item data'
+
+        redis = Redis('test')
+        redis.set(key, data)
+        self.assertIsNotNone(redis.get(key))
+
+        result = redis.delete(key)
+        self.assertTrue(result)
+        self.assertIsNone(redis.get(key))
+
+
+    def test_can_delete_by_tags(self):
+        """ Deleting items by tags """
+        pass
+
+
+    def test_can_delete_all(self):
+        """ Deleting all items under namespace """
+        key1 = 'itemkey'
+        data1 = 'initial item data'
+
+        key2 = 'itemkey2'
+        data2 = 'some more initial item data'
+
+        redis = Redis('test')
+        redis.set(key1, data1)
+        redis.set(key2, data2)
+
+        self.assertIsNotNone(redis.get(key1))
+        self.assertIsNotNone(redis.get(key2))
+
+        redis.delete_all()
+
+        self.assertIsNone(redis.get(key1))
+        self.assertIsNone(redis.get(key2))
 
 
 

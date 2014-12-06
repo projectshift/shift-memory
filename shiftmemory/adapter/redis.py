@@ -233,13 +233,13 @@ class Redis:
         Get
         Get single item by key or multiple items by tags. If several tags
         provided and disjunction if false (default) all tags must match,
-        otherwise only single tag must match.
+        otherwise any tag can match.
 
         :param key:             int, item key
         :param tags:            Iterable, tags to fetch by
         :return:                string, Iterable or None
         """
-        if key is not None:
+        if key:
             key = self.get_full_item_key(key)
             return self.get_redis().hget(key, 'data')
 
@@ -251,10 +251,34 @@ class Redis:
         pass
 
     def delete(self, key=None, *, tags=None, disjunction=False):
-        pass
+        """
+        Delete
+        Removes an item by key or several items marked with tags.
+        If disjunction is False (default) all tags must match
+        otherwise any tag can match.
+
+        :param key:             int, item key
+        :param tags:            Iterable, tags to fetch by
+        :return:                string, Iterable or None
+        """
+        if key:
+            key = self.get_full_item_key(key)
+            return self.get_redis().delete(key)
+
+
 
     def delete_all(self):
-        pass
+        """
+        Delete all
+        Removes all cached item stored under current namespace
+
+        :return:                bool
+        """
+
+        redis = self.get_redis()
+        ns = self.item_prefix + '*'
+        keys = redis.keys(ns)
+        return redis.delete(*keys)
 
 
     def set_tags(self, item_key, tags):
