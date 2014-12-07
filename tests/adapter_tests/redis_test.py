@@ -231,12 +231,6 @@ class RedisTest(TestCase):
         self.assertEqual(data, redis.get(key))
 
 
-    @attr('zz')
-    def test_can_get_by_tags(self):
-        """ Getting items by tags """
-        pass
-
-
     def test_can_delete_by_key(self):
         """ Deleting item by key """
         key = 'itemkey'
@@ -372,3 +366,63 @@ class RedisTest(TestCase):
         self.assertIn('tag2', item_tags)
 
         self.assertIsNone(redis.get_item_tags('no-item'))
+
+
+    # -------------------------------------------------------------------------
+    # Optimizing
+    # -------------------------------------------------------------------------
+
+
+    def test_can_optimize(self):
+        """ Performing storage optimization """
+
+        redis = Redis('test')
+        data = 'this data will be used for everything'
+
+        key1 = 'item1'; tags1=['tag1', 'tag2', 'tag3']
+        key2 = 'item2'; tags2=['tag1', 'tag2', 'tag3']
+        key3 = 'item3'; tags3=['tag3', 'tag4', 'tag5']
+        key4 = 'item4'; tags4=['tag3', 'tag4', 'tag5']
+
+        redis.set(key1, data, ttl=1, tags=tags1)
+        redis.set(key2, data, ttl=1, tags=tags2)
+
+        redis.set(key3, data, tags=tags3)
+        redis.set(key4, data, tags=tags4)
+
+        redis.get_redis().delete(redis.get_tag_set_key('tag4'))
+        redis.get_redis().delete(redis.get_tag_set_key('tag5'))
+
+
+
+        import time
+        time.sleep(1.1)
+        redis.optimize()
+
+        # missing items should be removed from tags
+        self.assertNotIn(
+            redis.get_full_item_key(key1),
+            redis.get_tagged_items('tag3')
+        )
+        self.assertNotIn(
+            redis.get_full_item_key(key2),
+            redis.get_tagged_items('tag3')
+        )
+
+
+        # empty tags should be removed
+        self.assertFalse(redis.get_tagged_items('tag1'))
+        self.assertFalse(redis.get_tagged_items('tag2'))
+
+        # missing tags should be removed from items
+        self.assertNotIn('tag4', redis.get_item_tags('item3'))
+        self.assertNotIn('tag4', redis.get_item_tags('item4'))
+        self.assertNotIn('tag5', redis.get_item_tags('item3'))
+        self.assertNotIn('tag5', redis.get_item_tags('item4'))
+
+
+
+
+
+
+

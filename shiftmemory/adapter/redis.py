@@ -36,6 +36,7 @@ class Redis:
         :return:                None
         """
         self.redis = None
+        self.config = None
 
         self.ttl = ttl
         self.namespace = namespace
@@ -131,6 +132,9 @@ class Redis:
         :param key:             string, tag
         :return:                string, tag set key
         """
+        if tag.startswith(self.tag_prefix):
+            return tag
+
         return self.tag_prefix + tag
 
 
@@ -227,28 +231,18 @@ class Redis:
 
 
 
-
-    def get(self, key=None, *, tags=None, disjunction=False):
+    def get(self, key=None):
         """
         Get
-        Get single item by key or multiple items by tags. If several tags
-        provided and disjunction if false (default) all tags must match,
-        otherwise any tag can match.
+        Get single item by key.
 
-        :param key:             int, item key
-        :param tags:            Iterable, tags to fetch by
-        :return:                string, Iterable or None
+        :param key:             item key
+        :return:                string or None
         """
-        if key:
-            key = self.get_full_item_key(key)
-            return self.get_redis().hget(key, 'data')
+        key = self.get_full_item_key(key)
+        return self.get_redis().hget(key, 'data')
 
 
-    def increment(self, key):
-        pass
-
-    def decrement(self, key):
-        pass
 
     def delete(self, key=None, *, tags=None, disjunction=False):
         """
@@ -293,8 +287,6 @@ class Redis:
 
         result = multi.execute()
         return result
-
-
 
 
     def delete_all(self):
@@ -383,3 +375,61 @@ class Redis:
     # -------------------------------------------------------------------------
     # Optimizing
     # -------------------------------------------------------------------------
+
+
+
+    def optimize(self):
+        """
+        Optimize
+        Optimizes redis database by walking each tag and ensuring items exist,
+        then walking each item end ensuring all tags exist.
+
+        :return:                bool
+        """
+        redis = self.get_redis()
+        keys = redis.keys(self.item_prefix + '*')
+
+        for key in keys:
+            is_tag = key.startswith(self.tag_prefix)
+
+            # optimize tag
+            if is_tag:
+                items = self.get_tagged_items(key)
+                for item in items:
+                    # clear missing items from sets
+                    if not redis.exists(item):
+                        redis.srem(key, item)
+
+                    # clear empty sets
+                    if redis.scard(key) == 0:
+                        redis.delete(key)
+                        continue
+
+            # optimize item
+            else:
+                tags = self.get_item_tags(key)
+                if not tags:
+                    continue
+
+                updated_tags = []
+                for tag in tags:
+                    # remove missing tags from items
+                    tagged_items = self.get_tagged_items(tag)
+                    if tagged_items:
+                        updated_tags.append(tag)
+
+                redis.hset(key, 'tags', updated_tags)
+
+        return True
+
+
+
+
+
+
+
+
+
+
+
+
