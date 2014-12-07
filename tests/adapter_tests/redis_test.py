@@ -42,7 +42,11 @@ class RedisTest(TestCase):
 
     def test_use_unix_socket_if_provided(self):
         """ Drop tcp socket and use unix socket if configured """
-        adapter = Redis(namespace='test',unix_socket_path='/tmp/run/redis.sock')
+        adapter = Redis(
+            namespace='test',
+            unix_socket_path='/tmp/run/redis.sock',
+            optimize_after=None
+        )
         self.assertFalse('host' in adapter.config)
         self.assertFalse('port' in adapter.config)
         self.assertTrue('unix_socket_path' in adapter.config)
@@ -394,7 +398,6 @@ class RedisTest(TestCase):
         redis.get_redis().delete(redis.get_tag_set_key('tag5'))
 
 
-
         import time
         time.sleep(1.1)
         redis.optimize()
@@ -421,6 +424,27 @@ class RedisTest(TestCase):
         self.assertNotIn('tag5', redis.get_item_tags('item4'))
 
 
+    def test_collect_garbage_initial(self):
+        """ Garbage collect does nothing on first run """
+        redis = Redis('test')
+        gc_key = redis.get_full_item_key('__gc')
+        self.assertIsNotNone(redis.get(gc_key))
+
+
+    def test_collect_garbage_returns_false_if_not_the_time(self):
+        """ Garbage collect returns false if  its not the time"""
+        redis = Redis('test')
+        self.assertFalse(redis.collect_garbage())
+
+
+    def test_collect_garbage(self):
+        """ Can do garbage collection after timeout """
+
+        redis = Redis('test', optimize_after='+1 second')
+        import time
+        time.sleep(1.1)
+
+        print(redis.collect_garbage())
 
 
 

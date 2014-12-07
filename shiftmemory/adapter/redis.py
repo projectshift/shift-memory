@@ -6,7 +6,7 @@ class Redis:
     Redis adapter
     Implements cache for items under namespaces in a single database. In
     addition each item can be marked by tags and can have optional custom
-    expiration. You can then perform fetch or remove items by tags or
+    expiration. You can then perform fetch by key or remove items by tags or
     namespaces.
 
     The way it works is that each cached item is stored as redis hash
@@ -23,6 +23,7 @@ class Redis:
         namespace,
         ttl=60,
         namespace_separator=None,
+        optimize_after = '+2 days',
         **config
     ):
         """
@@ -30,10 +31,12 @@ class Redis:
         Instantiates adapter with namespace, default ttl and optional
         connection configuration parameters
 
-        :param namespace:       namespace name
-        :param ttl:             default ttl for all items (default=60)
-        :param config:          connection configuration (optional)
-        :return:                None
+        :param namespace:           namespace name
+        :param ttl:                 default ttl for all items (default=60)
+        :param namespace_separator: string
+        :param config:              connection configuration (optional)
+        :param optimize_after:      collect garbage after period (None=off)
+        :return:                    None
         """
         self.redis = None
         self.config = None
@@ -51,6 +54,12 @@ class Redis:
 
         # init redis connection
         self.configure(config)
+
+        # collect garbage if it's time
+        if optimize_after:
+            self.optimize_after = optimize_after
+            self.collect_garbage()
+
 
 
     def configure(self, config=None):
@@ -376,8 +385,6 @@ class Redis:
     # Optimizing
     # -------------------------------------------------------------------------
 
-
-
     def optimize(self):
         """
         Optimize
@@ -421,6 +428,48 @@ class Redis:
                 redis.hset(key, 'tags', updated_tags)
 
         return True
+
+
+    def collect_garbage(self):
+        """
+        Collect garbage
+        Checks previous garbage collection timestamp and performs optimization
+        if its time to do so. You should consider lower optimization
+        timeout than default under load.
+
+        :return:                None
+        """
+        from shiftmemory import times
+        from datetime import datetime
+
+        timeout = self.optimize_after
+        key = self.get_full_item_key('__gc')
+
+        next_gc = self.get(key)
+
+        # first run?
+        if not next_gc:
+            next_gc = times.expires_to_timestamp(timeout)
+            self.set(key, next_gc)
+            return False
+
+        # not yet?
+        next_gc = int(next_gc)
+        now = int(datetime.utcnow().timestamp())
+        if now < next_gc:
+            return False
+
+        # optimize now
+        self.optimize()
+        next_gc = times.expires_to_timestamp(timeout)
+        self.set(key, next_gc)
+        return True
+
+
+
+
+
+
 
 
 
