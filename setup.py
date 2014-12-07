@@ -8,8 +8,6 @@ version = '0.0.1'
 # monkey patch os for vagrant hardlinks
 del os.link
 
-# drop caches
-os.system("find . -type f -name '*.pyc' -delete")
 
 # prepare config
 config = dict(
