@@ -444,7 +444,7 @@ class RedisTest(TestCase):
         import time
         time.sleep(1.1)
 
-        print(redis.collect_garbage())
+        self.assertTrue(redis.collect_garbage())
 
 
 
