@@ -2,7 +2,7 @@ import os
 from setuptools import setup
 
 
-version = '0.0.3'
+version = '0.0.1'
 
 # monkey patch os for vagrant hardlinks
 del os.link
