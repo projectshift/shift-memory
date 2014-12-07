@@ -1,14 +1,8 @@
-import os, re
+import os
 from setuptools import setup, find_packages
 
 
 version = '0.0.1'
-
-excludes_dependencies = [
-    'nose',
-    'rednose',
-    'ipython'
-]
 
 
 # monkey patch os for vagrant hardlinks
@@ -16,14 +10,6 @@ del os.link
 
 # drop caches
 os.system("find . -type f -name '*.pyc' -delete")
-
-# prepare requires
-requires = []
-with open('requirements.txt') as file:
-    p = r'^({}).*'.format('|'.join(excludes_dependencies))
-    for lib in file.read().splitlines():
-        if not re.search(p, lib):
-            requires.append(lib)
 
 # prepare config
 config = dict(
@@ -47,7 +33,11 @@ config = dict(
     packages = find_packages(exclude=['tests']),
 
     # dependencies
-    install_requires = requires
+    install_requires = [
+        'redis==2.10.3',
+        'hiredis==0.1.5',
+        'arrow==0.4.4'
+    ]
 
 )
 
