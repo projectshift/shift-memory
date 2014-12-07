@@ -29,7 +29,7 @@ config = dict(
     license = 'MIT',
 
     # packages
-    packages = ['shiftmemory'],
+    packages = ['shiftmemory', 'shiftmemory.adapter'],
 
     # dependencies
     install_requires = ['redis>=2.10.3']
