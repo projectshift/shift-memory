@@ -231,6 +231,7 @@ class RedisTest(TestCase):
         self.assertEqual(data, redis.get(key))
 
 
+    @attr('zz')
     def test_can_get_by_tags(self):
         """ Getting items by tags """
         pass
@@ -252,7 +253,52 @@ class RedisTest(TestCase):
 
     def test_can_delete_by_tags(self):
         """ Deleting items by tags """
-        pass
+        key1 = 'itemkey'
+        data1 = 'initial item data'
+
+        key2 = 'itemkey2'
+        data2 = 'more initial item data'
+
+        key3 = 'itemkey3'
+        data3 = 'and some more initial item data'
+
+        tags1 = ['tag1', 'tag2']
+        tags2 = ['tag3', 'tag4']
+
+        redis = Redis('test')
+        redis.set(key1, data1, tags=tags1)
+        redis.set(key2, data2, tags=tags1)
+        redis.set(key3, data3, tags=tags2)
+
+        redis.delete(tags=tags1)
+        self.assertIsNone(redis.get(key1))
+        self.assertIsNone(redis.get(key2))
+        self.assertIsNotNone(redis.get(key3))
+
+
+    def test_can_delete_by_tags_with_disjunction(self):
+        """ Deleting by tags with disjunction """
+        key1 = 'itemkey'
+        data1 = 'initial item data'
+
+        key2 = 'itemkey2'
+        data2 = 'more initial item data'
+
+        key3 = 'itemkey3'
+        data3 = 'and some more initial item data'
+
+        tags1 = ['tag1', 'tag2', 'tag3']
+        tags2 = ['tag3', 'tag4']
+
+        redis = Redis('test')
+        redis.set(key1, data1, tags=tags1)
+        redis.set(key2, data2, tags=tags1)
+        redis.set(key3, data3, tags=tags2)
+
+        redis.delete(tags=tags1, disjunction=True)
+        self.assertIsNone(redis.get(key1))
+        self.assertIsNone(redis.get(key2))
+        self.assertIsNone(redis.get(key3))
 
 
     def test_can_delete_all(self):

@@ -259,11 +259,41 @@ class Redis:
 
         :param key:             int, item key
         :param tags:            Iterable, tags to fetch by
-        :return:                string, Iterable or None
+        :return:                bool
         """
+        redis = self.get_redis()
+
         if key:
             key = self.get_full_item_key(key)
-            return self.get_redis().delete(key)
+            return redis.delete(key)
+
+
+        # disjunction or single tag
+        if disjunction or len(tags) <= 1:
+            result = True
+            for tag in tags:
+                tagged = self.get_tagged_items(tag)
+                if not tagged:
+                    continue
+
+                for item_key in tagged:
+                    result += self.delete(item_key)
+
+            return result
+
+        # without disjunction (all match)
+        tags_keys = [self.get_tag_set_key(tag) for tag in tags]
+        delete_us = redis.sinter(tags_keys)
+        if not delete_us:
+            return False
+
+        multi = redis.pipeline()
+        for item_key in delete_us:
+            multi.delete(item_key)
+
+        result = multi.execute()
+        return result
+
 
 
 
@@ -274,11 +304,11 @@ class Redis:
 
         :return:                bool
         """
-
         redis = self.get_redis()
         ns = self.item_prefix + '*'
         keys = redis.keys(ns)
         return redis.delete(*keys)
+
 
 
     def set_tags(self, item_key, tags):
