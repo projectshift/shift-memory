@@ -34,8 +34,18 @@ config = dict(
     install_requires = [
         'redis==2.10.3',
         'hiredis==0.1.5',
-        'arrow==0.4.4'
-    ]
+        'arrow==0.4.4',
+        'colorama==0.3.2',
+        'click==3.3',
+    ],
+
+    # entry points
+    entry_points = dict(
+        console_scripts = [
+            'shiftmemory = shiftmemory.cli.console:cli'
+        ]
+    )
+
 
 )
 
