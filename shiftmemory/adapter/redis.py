@@ -23,7 +23,7 @@ class Redis:
         namespace,
         ttl=60,
         namespace_separator=None,
-        optimize_after = '+2 days',
+        optimize_after='+2 days',
         **config
     ):
         """
@@ -34,8 +34,8 @@ class Redis:
         :param namespace:           namespace name
         :param ttl:                 default ttl for all items (default=60)
         :param namespace_separator: string
-        :param config:              connection configuration (optional)
         :param optimize_after:      collect garbage after period (None=off)
+        :param config:              connection config (falls back to redis defaults)
         :return:                    None
         """
         self.redis = None
@@ -52,15 +52,18 @@ class Redis:
         self.item_prefix = self.namespace + self.namespace_separator
         self.tag_prefix = self.item_prefix + 'tags' + self.namespace_separator
 
+        # get connection config
+        connection_config = config
+        if 'config' in connection_config:
+            connection_config = connection_config['config']
+
         # init redis connection
-        self.configure(config)
+        self.configure(connection_config)
 
         # collect garbage if it's time
         if optimize_after:
             self.optimize_after = optimize_after
             self.collect_garbage()
-
-
 
     def configure(self, config=None):
         """
@@ -84,7 +87,6 @@ class Redis:
         if 'unix_socket_path' in self.config:
             del self.config['host'], self.config['port']
 
-
     def get_redis(self):
         """
         Get redis
@@ -97,7 +99,6 @@ class Redis:
             self.redis = StrictRedis(**self.config)
 
         return self.redis
-
 
     # -------------------------------------------------------------------------
     # Keys
@@ -118,8 +119,6 @@ class Redis:
         key = self.item_prefix + key
         return key
 
-
-
     def is_full_item_key(self, key):
         """
         Is full item key?
@@ -130,8 +129,6 @@ class Redis:
         :return:                bool
         """
         return key.startswith(self.item_prefix)
-
-
 
     def get_tag_set_key(self, tag):
         """
@@ -146,11 +143,9 @@ class Redis:
 
         return self.tag_prefix + tag
 
-
     # -------------------------------------------------------------------------
     # Caching
     # -------------------------------------------------------------------------
-
 
     def check_ttl_support(self):
         """
@@ -169,8 +164,6 @@ class Redis:
 
         return True
 
-
-
     def exists(self, key):
         """
         Item exists?
@@ -182,8 +175,6 @@ class Redis:
         key = self.get_full_item_key(key)
         result = self.get_redis().exists(key)
         return result
-
-
 
     def set(self, key, value, *, tags=None, ttl=None, expires_at=None):
         """
@@ -201,7 +192,6 @@ class Redis:
         :param expires_at:      optional expiration date (utc)
         :return:                bool
         """
-
         redis = self.get_redis()
 
         # data
@@ -218,8 +208,6 @@ class Redis:
             self.set_tags(key, list(tags))
 
         return True
-
-
 
     def add(self, key, value, *, tags=None, ttl=None, expires_at=None):
         """
@@ -238,8 +226,6 @@ class Redis:
             return False
         return self.set(key, value, tags=tags, ttl=ttl, expires_at=expires_at)
 
-
-
     def get(self, key=None):
         """
         Get
@@ -250,8 +236,6 @@ class Redis:
         """
         key = self.get_full_item_key(key)
         return self.get_redis().hget(key, 'data')
-
-
 
     def delete(self, key=None, *, tags=None, disjunction=False):
         """
@@ -269,7 +253,6 @@ class Redis:
         if key:
             key = self.get_full_item_key(key)
             return redis.delete(key)
-
 
         # disjunction or single tag
         if disjunction or len(tags) <= 1:
@@ -297,7 +280,6 @@ class Redis:
         result = multi.execute()
         return result
 
-
     def delete_all(self):
         """
         Delete all
@@ -309,8 +291,6 @@ class Redis:
         ns = self.item_prefix + '*'
         keys = redis.keys(ns)
         return redis.delete(*keys)
-
-
 
     def set_tags(self, item_key, tags):
         """
@@ -339,7 +319,6 @@ class Redis:
         if not result:
             return False
 
-
         # add item key to tags
         for tag in tags:
             tag_key = self.get_tag_set_key(tag)
@@ -348,7 +327,6 @@ class Redis:
                 return False
 
         return True
-
 
     def get_tagged_items(self, tag):
         """
@@ -361,7 +339,6 @@ class Redis:
         key = self.get_tag_set_key(tag)
         result = self.get_redis().smembers(key)
         return result
-
 
     def get_item_tags(self, key):
         """
@@ -377,9 +354,6 @@ class Redis:
             return
 
         return tag_string.split(',')
-
-
-
 
     # -------------------------------------------------------------------------
     # Optimizing
@@ -428,7 +402,6 @@ class Redis:
                 redis.hset(key, 'tags', updated_tags)
 
         return True
-
 
     def collect_garbage(self):
         """

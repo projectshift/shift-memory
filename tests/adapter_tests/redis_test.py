@@ -1,11 +1,13 @@
 from unittest import TestCase, mock
 from nose.plugins.attrib import attr
 from redis import StrictRedis
+import time
 
 from shiftmemory import Memory, exceptions
 from shiftmemory.adapter import Redis
 
-@attr('integration')
+
+@attr('integration', 'redis')
 class RedisTest(TestCase):
     """ This holds tests for the main memory api """
 
@@ -14,14 +16,12 @@ class RedisTest(TestCase):
         redis.get_redis().flushdb()
         TestCase.tearDown(self)
 
-
     # -------------------------------------------------------------------------
 
     def test_create_adapter(self):
         """ Creating adapter """
         adapter = Redis('test')
         self.assertIsInstance(adapter, Redis)
-
 
     def test_default_config(self):
         """ Use default configuration options if non provided """
@@ -31,14 +31,12 @@ class RedisTest(TestCase):
         self.assertEqual(6379, adapter.config['port'])
         self.assertEqual(0, adapter.config['db'])
 
-
     def test_merge_config_with_defaults(self):
         """ Merge config options with defaults to get missing """
         adapter = Redis(namespace='test', host='127.0.0.1', db=2)
         self.assertEqual('127.0.0.1', adapter.config['host'])
         self.assertEqual(6379, adapter.config['port'])
         self.assertEqual(2, adapter.config['db'])
-
 
     def test_use_unix_socket_if_provided(self):
         """ Drop tcp socket and use unix socket if configured """
@@ -51,13 +49,11 @@ class RedisTest(TestCase):
         self.assertFalse('port' in adapter.config)
         self.assertTrue('unix_socket_path' in adapter.config)
 
-
     def test_get_redis(self):
         """ Getting redis connection """
         adapter = Redis('testing')
         redis = adapter.get_redis()
         self.assertIsInstance(redis, StrictRedis)
-
 
     def test_can_put_to_redis(self):
         """ Can do basic put to storage """
@@ -65,9 +61,6 @@ class RedisTest(TestCase):
         redis.get_redis().set('foo', 'bar')
         result = redis.get_redis().get('foo')
         self.assertEqual('bar', result)
-
-
-
 
     # -------------------------------------------------------------------------
     # Keys
@@ -79,11 +72,9 @@ class RedisTest(TestCase):
         namespace = 'testing'
         separator = '::'
         key = 'some-key'
-
         redis = Redis(namespace)
         full_key = redis.get_full_item_key(key)
         self.assertEqual(namespace + separator + key, full_key)
-
 
     def test_return_key_if_already_full(self):
         """ Do not create full key from full key, just return """
@@ -91,11 +82,9 @@ class RedisTest(TestCase):
         namespace = 'testing'
         separator = '::'
         key = 'some-key'
-
         redis = Redis(namespace)
         full_key = redis.get_full_item_key(key)
         self.assertEqual(full_key, redis.get_full_item_key(full_key))
-
 
     def test_can_detect_full_keys(self):
         """ Detecting full item key """
@@ -112,7 +101,6 @@ class RedisTest(TestCase):
         self.assertFalse(redis.is_full_item_key(not_full_key))
         self.assertFalse(redis.is_full_item_key(bogus))
 
-
     def test_get_tag_key(self):
         """ Get full key for a tag set from tag name"""
         namespace = 'testing'
@@ -124,11 +112,9 @@ class RedisTest(TestCase):
         expected = namespace + sep + 'tags' + sep + tag
         self.assertEqual(expected, tag_key)
 
-
     # -------------------------------------------------------------------------
     # Cache
     # -------------------------------------------------------------------------
-
 
     def test_check_ttl_support(self):
         """ Can check for redis TTL support"""
@@ -144,82 +130,59 @@ class RedisTest(TestCase):
         """ Can check item existence in cache """
         key = 'somekey'
         data = 'some date to put to cache'
-
         redis = Redis('test')
         redis.set(key,data)
-
         self.assertTrue(redis.exists(key))
         self.assertFalse(redis.exists('no-item'))
-
 
     def test_can_set(self):
         """ Simple item set """
         key = 'somekey'
         data = 'some date to put to cache'
-
         redis = Redis('test')
         redis.set(key,data)
-
         full_key = redis.get_full_item_key(key)
         self.assertIsNotNone(redis.get_redis().hget(full_key, 'data'))
 
-
     def test_can_set_with_ttl(self):
         """ Doing set item with custom ttl"""
-        import time
-
         ttl = 1
         key = 'somekey'
         data = 'some date to put to cache'
-
         redis = Redis('test')
         redis.set(key,data, ttl=ttl)
         full_key = redis.get_full_item_key(key)
-
         time.sleep(1)
         self.assertIsNone(redis.get_redis().hget(full_key, 'data'))
 
-
-
     def test_can_set_with_expiration(self):
         """ Doing set item with expiration """
-        import time
-
         key = 'somekey'
         data = 'some date to put to cache'
         expire = '+1second'
-
         redis = Redis('test')
         redis.set(key,data, expires_at=expire)
         full_key = redis.get_full_item_key(key)
-
         time.sleep(1.1)
         self.assertIsNone(redis.get_redis().hget(full_key, 'data'))
-
-
 
     def test_can_set_with_tags(self):
         """ Doing set item with tags """
         key = 'somekey'
         data = 'some date to put to cache'
         tags = ['tag']
-
         redis = Redis('test')
         redis.set(key,data, tags=tags)
-
         item_tags = redis.get_item_tags(key)
         tagged_items = redis.get_tagged_items('tag')
-
         self.assertIn('tag', item_tags)
         self.assertIn(redis.get_full_item_key(key), tagged_items)
 
     def test_can_add_item(self):
         """ Add item if not exist """
-
         key = 'itemkey'
         data1 = 'initial item data'
         data2 = 'updated item data'
-
         redis = Redis('test')
         self.assertTrue(redis.add(key, data1))
         self.assertFalse(redis.add(key, data2))
@@ -229,25 +192,20 @@ class RedisTest(TestCase):
         """ Getting item by key """
         key = 'itemkey'
         data = 'initial item data'
-
         redis = Redis('test')
         self.assertTrue(redis.set(key, data))
         self.assertEqual(data, redis.get(key))
-
 
     def test_can_delete_by_key(self):
         """ Deleting item by key """
         key = 'itemkey'
         data = 'initial item data'
-
         redis = Redis('test')
         redis.set(key, data)
         self.assertIsNotNone(redis.get(key))
-
         result = redis.delete(key)
         self.assertTrue(result)
         self.assertIsNone(redis.get(key))
-
 
     def test_can_delete_by_tags(self):
         """ Deleting items by tags """
@@ -273,7 +231,6 @@ class RedisTest(TestCase):
         self.assertIsNone(redis.get(key2))
         self.assertIsNotNone(redis.get(key3))
 
-
     def test_can_delete_by_tags_with_disjunction(self):
         """ Deleting by tags with disjunction """
         key1 = 'itemkey'
@@ -298,7 +255,6 @@ class RedisTest(TestCase):
         self.assertIsNone(redis.get(key2))
         self.assertIsNone(redis.get(key3))
 
-
     def test_can_delete_all(self):
         """ Deleting all items under namespace """
         key1 = 'itemkey'
@@ -318,9 +274,6 @@ class RedisTest(TestCase):
 
         self.assertIsNone(redis.get(key1))
         self.assertIsNone(redis.get(key2))
-
-
-
 
     def test_set_item_tags(self):
         """ Setting item tags """
@@ -351,7 +304,6 @@ class RedisTest(TestCase):
         self.assertTrue(redis.get_full_item_key(key1) in set2)
         self.assertTrue(redis.get_full_item_key(key2) in set2)
 
-
     def test_get_item_tags(self):
         """ Getting item tags """
         key = 'somekey'
@@ -371,11 +323,9 @@ class RedisTest(TestCase):
 
         self.assertIsNone(redis.get_item_tags('no-item'))
 
-
     # -------------------------------------------------------------------------
     # Optimizing
     # -------------------------------------------------------------------------
-
 
     def test_can_optimize(self):
         """ Performing storage optimization """
@@ -397,8 +347,6 @@ class RedisTest(TestCase):
         redis.get_redis().delete(redis.get_tag_set_key('tag4'))
         redis.get_redis().delete(redis.get_tag_set_key('tag5'))
 
-
-        import time
         time.sleep(1.1)
         redis.optimize()
 
@@ -430,18 +378,15 @@ class RedisTest(TestCase):
         gc_key = redis.get_full_item_key('__gc')
         self.assertIsNotNone(redis.get(gc_key))
 
-
     def test_collect_garbage_returns_false_if_not_the_time(self):
         """ Garbage collect returns false if  its not the time"""
         redis = Redis('test')
         self.assertFalse(redis.collect_garbage())
 
-
     def test_collect_garbage(self):
         """ Can do garbage collection after timeout """
 
         redis = Redis('test', optimize_after='+1 second')
-        import time
         time.sleep(1.1)
 
         self.assertTrue(redis.collect_garbage())

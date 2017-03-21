@@ -18,8 +18,6 @@ class Memory():
         if config:
             self.config=config
 
-
-
     def get_cache(self, cache_name):
         """
         Get cache
@@ -30,14 +28,14 @@ class Memory():
         if cache_name in self.caches:
             return self.caches[cache_name]
 
-        if not cache_name in self.config['caches']:
+        if cache_name not in self.config['caches']:
             error = 'Cache [{}] is not configured'.format(cache_name)
             raise exceptions.ConfigurationException(error)
 
         cache_config = self.config['caches'][cache_name]
         adapter_name = cache_config['adapter']
 
-        if not adapter_name in self.config['adapters']:
+        if adapter_name not in self.config['adapters']:
             error = 'Adapter [{}] is not configured'.format(adapter_name)
             raise exceptions.ConfigurationException(error)
 
@@ -49,17 +47,17 @@ class Memory():
             error = 'Adapter class [{}] is missing'.format(adapter_class)
             raise exceptions.AdapterMissingException(error)
 
-
         cls = getattr(adapter, adapter_class)
-        cache = cls(
-            namespace = cache_name,
-            config=adapter_config['config'],
+        adapter_params = dict(
+            namespace=cache_name,
             ttl=cache_config['ttl'],
-            )
+        )
+        if 'config' in adapter_config:
+            adapter_params['config'] = adapter_config['config']
+
+        cache = cls(**adapter_params)
         self.caches[cache_name] = cache
         return self.caches[cache_name]
-
-
 
     def drop_cache(self, name):
         """
@@ -74,8 +72,6 @@ class Memory():
 
         return cache.delete_all()
 
-
-
     def drop_all_caches(self):
         """
         Drop all caches
@@ -87,8 +83,6 @@ class Memory():
             if hasattr(cache, 'delete_all'):
                 cache.delete_all(name)
         return True
-
-
 
     def optimize_cache(self, name):
         """
@@ -102,8 +96,6 @@ class Memory():
             raise exceptions.AdapterFeatureMissingException(error)
 
         return cache.optimize()
-
-
 
     def optimize_all_caches(self):
         """
