@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+from nose import run
+import click
+
+# -----------------------------------------------------------------------------
+# Group setup
+# -----------------------------------------------------------------------------
+
+
+@click.group(help='Cache management commands')
+def cli():
+    pass
+
+
+@cli.command(name='test',context_settings=dict(ignore_unknown_options=True))
+@click.argument('nose_argsuments', nargs=-1, type=click.UNPROCESSED)
+def test(nose_argsuments):
+    """ Run application tests """
+
+    params = ['__main__', '-c', 'nose.ini']
+    params.extend(nose_argsuments)
+    run(argv=params)
+
+
+
+
+cli()
+
