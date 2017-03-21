@@ -9,6 +9,7 @@ __pycache__
 
 # installation ignores
 /dist
+/build
 /data
 /*.egg-info
 .coverage
