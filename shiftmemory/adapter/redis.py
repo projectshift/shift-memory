@@ -1,5 +1,8 @@
+import calendar
 from redis import StrictRedis
 from shiftmemory import exceptions, times
+from datetime import datetime
+
 
 class Redis:
     """
@@ -152,7 +155,6 @@ class Redis:
         Check ttl support
         Checks major redis version to be >2 for ttl support and raises
         feature exception if it's not
-
         :return:                None
         """
         redis = self.get_redis()
@@ -199,8 +201,10 @@ class Redis:
         redis.hset(key, 'data', value)
 
         # expire
-        if expires_at: ttl = times.ttl_from_expiration(expires_at)
-        if not ttl: ttl = self.ttl
+        if expires_at:
+            ttl = times.ttl_from_expiration(expires_at)
+        if not ttl:
+            ttl = self.ttl
         redis.expire(key, ttl)
 
         # tag
@@ -412,12 +416,8 @@ class Redis:
 
         :return:                None
         """
-        from shiftmemory import times
-        from datetime import datetime
-
         timeout = self.optimize_after
         key = self.get_full_item_key('__gc')
-
         next_gc = self.get(key)
 
         # first run?
@@ -428,7 +428,7 @@ class Redis:
 
         # not yet?
         next_gc = int(next_gc)
-        now = int(datetime.utcnow().timestamp())
+        now = int(calendar.timegm(datetime.utcnow().utctimetuple()))
         if now < next_gc:
             return False
 

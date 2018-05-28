@@ -7,6 +7,7 @@ cache items expiration.
 """
 from datetime import datetime
 import arrow
+import calendar
 from . import exceptions
 
 
@@ -18,11 +19,9 @@ def ttl_from_expiration(expires):
     :param expires:             date/timestamp/string/shift (+ 1 hour)
     :return:                    int
     """
-
-    now = int(datetime.utcnow().timestamp())
+    now = int(calendar.timegm(datetime.utcnow().utctimetuple()))
     expires = expires_to_timestamp(expires)
     return expires - now
-
 
 
 def expires_to_timestamp(expires):
@@ -31,15 +30,20 @@ def expires_to_timestamp(expires):
     Converts expiration to a unix timestamp.  The expiration date may be in
     one of the formats:
 
-        - datetime, naive or timezone-aware
+        - timezone-aware datetime
+        - naive datetime (must be UTC)
         - arrow object
-        - timestamp string or int
+        - timestamp string or int (must be UTC)
         - date string
         - time shift (+1day 1hour, +1week -1day)
 
-    All ow the above are implied to be in UTC format for the exception on
+    All of the above are implied to be in UTC format with the exception of
     datetime and arrow objects having explicit timezone set (those will be
-    converted to UTC). Yet naive datetimes will are implied to be UTC as well.
+    converted to UTC).
+
+    ATTENTION: be careful when passing naive datetime objects here as they
+    will not be correctly converted to UTC, since we don't know the timezone.
+    Naive datetimes can only be UTC
 
     :param expires:             mixed, expiration date
     :return:                    int, timestamp
@@ -50,7 +54,6 @@ def expires_to_timestamp(expires):
         return expires
     if isinstance(expires, str) and expires.isdigit():
         return int(expires)
-
 
     # from datetime or arrow
     if isinstance(expires, datetime) or isinstance(expires, arrow.Arrow):
@@ -67,7 +70,6 @@ def expires_to_timestamp(expires):
         params = time_shift_to_params(expires)
         arr = arrow.utcnow().replace(**params)
         return arr.timestamp
-
 
     # from date string
     arr = arrow.get(expires)
@@ -106,13 +108,12 @@ def time_shift_to_params(shift):
             sign = previous_sign
 
         of_what = of_what.rstrip('s') + 's'
-        if not of_what in valid or not how_much:
+        if of_what not in valid or not how_much:
             error = '[{}] is not a valid time shift!'.format(shift)
             raise exceptions.ValueException(error)
 
         params[of_what] = int(sign+how_much)
         previous_sign = sign
-
 
     if not params:
         error = '[{}] is not a valid time shift!'.format(shift)

@@ -2,10 +2,14 @@ from unittest import TestCase, mock
 from nose.plugins.attrib import attr
 
 import arrow
-from datetime import datetime, tzinfo
+import calendar
+import pytz
+from datetime import datetime
 import shiftmemory.times as time
 from shiftmemory.exceptions import ValueException
 
+
+@attr('times')
 class TimeTest(TestCase):
     """
     Time tests
@@ -17,39 +21,38 @@ class TimeTest(TestCase):
         timestamp = '1417762828'
         self.assertEqual(int(timestamp), time.expires_to_timestamp(timestamp))
 
-
     def test_get_timezone_name_from_arrow_date(self):
         """ Can get timezone name from arrow date """
         a = arrow.get(datetime.utcnow())
         tz = a.tzinfo.tzname(a)
         self.assertEqual('UTC', tz)
 
-
     def test_expires_datetime_to_timestamp(self):
         """ Converting expiration datetime to timestamp """
 
-        now = datetime.now()
-        utc = datetime.utcnow()
-        msk = arrow.now().to('Europe/Moscow').datetime
+        # REGRESSION: now here used to be naive, without a timezone
+        # it is not equal to UTC timestamp we are converting it to
+        # we are now adding explicit timezone
+        tz = pytz.timezone('Europe/London')
+        now = datetime.now(tz)
 
-        timestamp = int(datetime.utcnow().timestamp())
+        # naive here must be utc
+        utc = datetime.utcnow()
+
+        msk = arrow.utcnow().to('Europe/Moscow').datetime
+        timestamp = calendar.timegm(datetime.utcnow().utctimetuple())
 
         self.assertEqual(timestamp, time.expires_to_timestamp(now))
         self.assertEqual(timestamp, time.expires_to_timestamp(utc))
         self.assertEqual(timestamp, time.expires_to_timestamp(msk))
 
-
     def test_expires_arrow_to_timestamp(self):
         """ Converting expiration arrow instance to timestamp """
-
-        utc = arrow.now()
-        msk = arrow.now().to('Europe/Moscow')
-
-        timestamp = int(datetime.utcnow().timestamp())
-
+        utc = arrow.utcnow()
+        msk = arrow.utcnow().to('Europe/Moscow')
+        timestamp = calendar.timegm(datetime.utcnow().utctimetuple())
         self.assertEqual(timestamp, time.expires_to_timestamp(utc))
         self.assertEqual(timestamp, time.expires_to_timestamp(msk))
-
 
     def test_expires_date_string_to_timestamp(self):
         """ Converting expiration date string to timestamp """
@@ -80,16 +83,12 @@ class TimeTest(TestCase):
             '+1Year2Days',
         ]
 
-
         for shift in shifts:
             result = time.expires_to_timestamp(shift)
             self.assertTrue(type(result) is int)
 
-
-
     def test_time_shift_to_params(self):
         """ Time shift string to parameters dict """
-
         shift = '+2day-12years10 Seconds + 2 months'
         result = time.time_shift_to_params(shift)
         self.assertTrue(type(result) is dict)
@@ -97,7 +96,6 @@ class TimeTest(TestCase):
         self.assertEqual(+2, result['months'])
         self.assertEqual(+2, result['days'])
         self.assertEqual(-10, result['seconds'])
-
 
     def test_raise_when_using_invalid_time_shift(self):
         """ Raise on using invalid time shift """
@@ -111,15 +109,15 @@ class TimeTest(TestCase):
             with self.assertRaises(ValueException):
                 time.time_shift_to_params(shift)
 
-
     def test_ttl_from_expiration(self):
-        """ Getting ttl from expiration in general way """
+        """ Getting ttl from expiration """
 
-        # datetime
-        self.assertEquals(0, time.ttl_from_expiration(datetime.utcnow()))
+        # datetime (naive, but utc)
+        utc = datetime.utcnow()
+        self.assertEquals(0, time.ttl_from_expiration(utc))
 
         # timestamp
-        ts = int(datetime.utcnow().timestamp())
+        ts = int(calendar.timegm(datetime.utcnow().utctimetuple()))
         self.assertEqual(0, time.ttl_from_expiration(ts))
 
         # time shift

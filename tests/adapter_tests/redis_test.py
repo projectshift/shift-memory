@@ -68,7 +68,6 @@ class RedisTest(TestCase):
 
     def test_get_full_key(self):
         """ Generating full namespaced key from short cache key"""
-
         namespace = 'testing'
         separator = '::'
         key = 'some-key'
@@ -80,7 +79,6 @@ class RedisTest(TestCase):
         """ Do not create full key from full key, just return """
 
         namespace = 'testing'
-        separator = '::'
         key = 'some-key'
         redis = Redis(namespace)
         full_key = redis.get_full_item_key(key)
@@ -161,7 +159,7 @@ class RedisTest(TestCase):
         data = 'some date to put to cache'
         expire = '+1second'
         redis = Redis('test')
-        redis.set(key,data, expires_at=expire)
+        redis.set(key, data, expires_at=expire)
         full_key = redis.get_full_item_key(key)
         time.sleep(1.1)
         self.assertIsNone(redis.get_redis().hget(full_key, 'data'))
@@ -360,7 +358,6 @@ class RedisTest(TestCase):
             redis.get_tagged_items('tag3')
         )
 
-
         # empty tags should be removed
         self.assertFalse(redis.get_tagged_items('tag1'))
         self.assertFalse(redis.get_tagged_items('tag2'))
@@ -370,7 +367,6 @@ class RedisTest(TestCase):
         self.assertNotIn('tag4', redis.get_item_tags('item4'))
         self.assertNotIn('tag5', redis.get_item_tags('item3'))
         self.assertNotIn('tag5', redis.get_item_tags('item4'))
-
 
     def test_collect_garbage_initial(self):
         """ Garbage collect does nothing on first run """
@@ -385,10 +381,8 @@ class RedisTest(TestCase):
 
     def test_collect_garbage(self):
         """ Can do garbage collection after timeout """
-
         redis = Redis('test', optimize_after='+1 second')
         time.sleep(1.1)
-
         self.assertTrue(redis.collect_garbage())
 
 
