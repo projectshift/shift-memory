@@ -2,8 +2,8 @@ language: python
 
 # use pythons
 python:
-  - "3.3"
-  - "3.4"
+  - "3.6"
+  - "3.7"
 
 # enable services
 services:
