@@ -337,8 +337,8 @@ class Redis:
         Get tagged items
         Returns a ist of item keys marked with the given tag.
 
-        :param tag:             string, tag
-        :return:                list
+        :param tag: string, tag
+        :return: list
         """
         key = self.get_tag_set_key(tag)
         result = self.get_redis().smembers(key)
@@ -349,8 +349,8 @@ class Redis:
         Get item tags
         Returns a list of items tags by item key
 
-        :param key:             string, item key
-        :return:                list | None
+        :param key: string, item key
+        :return: list | None
         """
         key = self.get_full_item_key(key)
         tag_string = self.get_redis().hget(key, 'tags')
@@ -369,7 +369,7 @@ class Redis:
         Optimizes redis database by walking each tag and ensuring items exist,
         then walking each item end ensuring all tags exist.
 
-        :return:                bool
+        :return: bool
         """
         redis = self.get_redis()
         keys = redis.keys(self.item_prefix + '*')
@@ -414,7 +414,7 @@ class Redis:
         if its time to do so. You should consider lower optimization
         timeout than default under load.
 
-        :return:                None
+        :return: None
         """
         timeout = self.optimize_after
         key = self.get_full_item_key('__gc')

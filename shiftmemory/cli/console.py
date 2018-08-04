@@ -16,6 +16,7 @@ class Config():
     def __init__(self):
         self.verbose = False
 
+
 configurator = click.make_pass_decorator(Config, ensure=True)
 
 
@@ -41,8 +42,6 @@ def cli(settings, config):
 # -----------------------------------------------------------------------------
 # Commands
 # -----------------------------------------------------------------------------
-
-
 
 # @cli.command(name='list-caches')
 def caches():
@@ -119,10 +118,10 @@ def optimize_all():
     br(3)
 
 
-
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
+
 
 def br(how_much=1): echo('\n' * how_much)
 def green(text): echo(style(text, fg='green'))

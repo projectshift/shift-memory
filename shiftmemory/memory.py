@@ -8,15 +8,32 @@ class Memory():
     provides means to perform operations on caches
     """
 
-    def __init__(self, config=None):
+    def __init__(self, *args, **kwargs):
         """
         Creates your memory instance
-        Just give it your caches configuration as a dictionary
+        Give it your caches configuration as a dictionary
         """
+        self.adapters = dict()
         self.caches = dict()
+        self._cache_instances = dict()
         self.config = dict(adapters=dict(), caches=dict())
-        if config:
-            self.config=config
+
+        if args or kwargs:
+            self.init(*args, **kwargs)
+
+    def init(self, adapters=None, caches=None):
+        """
+        Delayed initializer
+        This can be called by __init__ or later.
+
+        :param adapters: dict, adapters configuration
+        :param caches: dict, caches configuration
+        :return:
+        """
+        if adapters:
+            self.adapters = adapters
+        if caches:
+            self.caches = caches
 
     def get_cache(self, cache_name):
         """
@@ -25,21 +42,21 @@ class Memory():
         attempts to create a cache from configuration and preserve
         for future use
         """
-        if cache_name in self.caches:
-            return self.caches[cache_name]
+        if cache_name in self._cache_instances:
+            return self._cache_instances[cache_name]
 
-        if cache_name not in self.config['caches']:
+        if cache_name not in self.caches:
             error = 'Cache [{}] is not configured'.format(cache_name)
             raise exceptions.ConfigurationException(error)
 
-        cache_config = self.config['caches'][cache_name]
+        cache_config = self.caches[cache_name]
         adapter_name = cache_config['adapter']
 
-        if adapter_name not in self.config['adapters']:
+        if adapter_name not in self.adapters:
             error = 'Adapter [{}] is not configured'.format(adapter_name)
             raise exceptions.ConfigurationException(error)
 
-        adapter_config = self.config['adapters'][adapter_name]
+        adapter_config = self.adapters[adapter_name]
         adapter_type = adapter_config['type']
         adapter_class = adapter_type[0].upper() + adapter_type[1:]
 
@@ -56,8 +73,8 @@ class Memory():
             adapter_params['config'] = adapter_config['config']
 
         cache = cls(**adapter_params)
-        self.caches[cache_name] = cache
-        return self.caches[cache_name]
+        self._cache_instances[cache_name] = cache
+        return self._cache_instances[cache_name]
 
     def drop_cache(self, name):
         """
@@ -78,7 +95,7 @@ class Memory():
         Goes through every configured cache and drops all items. Will
         skip certain caches if they do not support drop all feature
         """
-        for name in self.config.keys():
+        for name in self.caches.keys():
             cache = self.get_cache(name)
             if hasattr(cache, 'delete_all'):
                 cache.delete_all(name)
@@ -87,7 +104,7 @@ class Memory():
     def optimize_cache(self, name):
         """
         Optimize cache
-        gets cache by name and performs optimization if supported
+        Gets cache by name and performs optimization if supported
         """
         cache = self.get_cache(name)
         if not hasattr(cache, 'optimize'):
@@ -103,7 +120,7 @@ class Memory():
         Goes through every configured cache and optimizes. Will
         skip certain caches if they do not support optimization feature
         """
-        for name in self.config.keys():
+        for name in self.caches.keys():
             cache = self.get_cache(name)
             if hasattr(cache, 'optimize'):
                 cache.optimize(name)

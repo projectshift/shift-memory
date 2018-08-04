@@ -77,7 +77,6 @@ class RedisTest(TestCase):
 
     def test_return_key_if_already_full(self):
         """ Do not create full key from full key, just return """
-
         namespace = 'testing'
         key = 'some-key'
         redis = Redis(namespace)
