@@ -294,6 +294,8 @@ class Redis:
         redis = self.get_redis()
         ns = self.item_prefix + '*'
         keys = redis.keys(ns)
+        if not keys:
+            return False
         return redis.delete(*keys)
 
     def set_tags(self, item_key, tags):
