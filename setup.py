@@ -92,10 +92,10 @@ setup(**dict(
 
     # project dependencies
     install_requires=[
-        'click>=6.0,<7.0',
-        'redis==2.10.6',
-        'hiredis==0.2.0',
-        'arrow==0.12.1'
+        'click>=7.0,<8.0',
+        'redis>=3.2.1,<4.0.0',
+        'hiredis>=1.0.0,<2.0.0',
+        'arrow>=0.13.1,<1.0.0'
     ],
 
     # entry points
