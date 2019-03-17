@@ -22,7 +22,7 @@ from setuptools import setup, find_packages
 # ----------------------------------------------------------------------------
 
 # project version
-version = '0.0.7'
+version = '0.0.8'
 
 # development status
 # dev_status = '1 - Planning'
@@ -57,7 +57,6 @@ setup(**dict(
         'python3',
         'cache',
         'redis',
-        'memcache',
     ],
 
     # classifiers
