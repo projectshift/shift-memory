@@ -405,7 +405,7 @@ class Redis:
                     if tagged_items:
                         updated_tags.append(tag)
 
-                redis.hset(key, 'tags', updated_tags)
+                redis.hset(key, 'tags', ','.join(updated_tags))
 
         return True
 
